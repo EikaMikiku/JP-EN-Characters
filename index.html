@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="chota.min.css">
+	<script type="text/javascript" src="learn.js"></script>
+	<script type="text/javascript" src="hiragana.js"></script>
+	<script type="text/javascript" src="katakana.js"></script>
+	<title>Learn Japanese</title>
+	<style type="text/css">
+		.button {
+			cursor: pointer;
+			outline: none;
+		}
+		.cards-container {
+			padding-top: 30px;
+			border-top: 2px solid #eee;
+		}
+		.card {
+			text-align: center;
+			word-break: keep-all;
+			padding-left: 0;
+			padding-right: 0;
+			line-height: 100%;
+			border: 1px solid transparent;
+			display: flex;
+			justify-content: center;
+			flex-direction: column;
+		}
+		.card.selectable:hover {
+			box-shadow: 0 0 3px #000;
+			cursor: pointer;
+		}
+		.selected {
+			box-shadow: 0 0 3px #20a6e7;
+			border: 1px solid #20a6e7;
+		}
+		.incorrect {
+			box-shadow: 0 0 2px #f55;
+			border: 1px solid #f55;
+		}
+		.correct {
+			box-shadow: 0 0 2px #1D6;
+			border: 1px solid #1D6;
+		}
+		.flip {
+			transform: rotateY(180deg);
+			transition: 1s;
+			opacity: 0;
+			pointer-events: none;
+		}
+		#train-cards-row .card.jp {
+			height: 100%;
+			font-size: 5em;
+		}
+		#train-cards-row .card.rom:not(:first-child) {
+			margin-top: 20px;
+		}
+		#settings-container {
+			position: absolute;
+			display: flex;
+			width: 100%;
+			height: 100%;
+			justify-content: center;
+			background: rgba(0,0,0,0.5);
+			z-index: 1;
+		}
+		.settings-popup {
+			background: white;
+			margin: auto;
+			width: 600px;
+			padding-left: 10px;
+			padding-right: 10px;
+		}
+		.settings-popup fieldset {
+			width: 50%;
+			margin: 0;
+		}
+		.settings-popup fieldset:not(:last-child) {
+			border-right: 0;
+		}
+		.fieldset-container {
+			display: flex;
+			justify-content: center;
+			margin-bottom: 10px; 
+		}
+		input[type="checkbox"], input[type="radio"] {
+			position: relative;
+			top: 3px;
+		}
+		footer {
+			text-align: right;
+		}
+		header {
+			text-align: left;
+		}
+		.row {
+			justify-content: center;
+		}
+		#test-result {
+			font-size: 3em;
+		}
+	</style>
+</head>
+<body>
+	<div id="settings-container" class="is-hidden">
+		<div class="settings-popup card">
+			<header>
+				<h4>Settings</h4>
+			</header>
+			<div class="fieldset-container">
+				<fieldset class="training-settings">
+					<legend>Alphabet</legend>
+					<p>
+						<label>
+							<span>Katakana:</span>
+						<input id="train-katakana" type="radio" name="alphabet">
+						</label>
+						<label>
+							<span>Hiragana:</span>
+						<input id="train-hiragana" checked type="radio" name="alphabet">
+						</label>
+					</p>
+				</fieldset>
+				<fieldset class="training-settings">
+					<legend>Training subsets</legend>
+					<p>
+						<label>
+							<span title="e.g. き">Monographs:</span>
+							<input id="train-monographs" type="checkbox">
+						</label>
+					</p>
+					<p>
+						<label>
+							<span title="e.g. ぎ">Diacritics:</span>
+							<input id="train-diacritics" type="checkbox">
+						</label>
+					</p>
+					<p>
+						<label>
+							<span title="e.g. きゃ">Digraphs:</span>
+							<input id="train-digraphs" type="checkbox">
+						</label>
+					</p>
+					<p>
+						<label>
+							<span title="e.g. ぎゃ">Digraphs with diacritics:</span>
+							<input id="train-digraphs-diacritics" type="checkbox">
+						</label>
+					</p>
+				</fieldset>
+				<fieldset class="testing-settings">
+					<legend>Testing subsets</legend>
+					<p>
+						<label>
+							<span title="e.g. き">Monographs:</span>
+							<input id="test-monographs" type="checkbox">
+						</label>
+					</p>
+					<p>
+						<label>
+							<span title="e.g. ぎ">Diacritics:</span>
+							<input id="test-diacritics" type="checkbox">
+						</label>
+					</p>
+					<p>
+						<label>
+							<span title="e.g. きゃ">Digraphs:</span>
+							<input id="test-digraphs" type="checkbox">
+						</label>
+					</p>
+					<p>
+						<label>
+							<span title="e.g. ぎゃ">Digraphs with diacritics:</span>
+							<input id="test-digraphs-diacritics" type="checkbox">
+						</label>
+					</p>
+				</fieldset>
+			</div>
+			<footer>
+				<button id="save-settings" class="button primary">Save</button>
+				<button id="reset-settings" class="button secondary">Reset</button>
+			</footer>
+		</div>
+	</div>
+	<div class="container">
+		<nav class="nav">
+			<div class="nav-left">
+				<div class="brand">JP-EN</div>
+				<div id="test-time" class="brand is-hidden">00:00.000</div>
+			</div>
+			<div class="nav-center">
+				<button id="train-button" class="button primary" disabled>Train</button>
+				<button id="test-button" class="button primary" disabled>Test</button>
+			</div>
+			<div class="nav-right">
+				<button id="settings" class="button clear">Settings</button>
+			</div>
+		</nav>
+		<div class="cards-container">
+			<div id="test-cards-row" class="row"></div>
+			<div id="test-result" class="row is-hidden">0</div>
+			<div id="train-cards-row" class="row is-hidden">
+				<div class="col-5">
+					<div id="train-jp-card" class="card jp">JP</div>
+				</div>
+				<div id="train-rom-cards" class="col">
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	window.addEventListener("load", (e) => {
+		let testButton = document.getElementById("test-button");
+		let trainButton = document.getElementById("train-button");
+		testButton.disabled = false;
+		trainButton.disabled = false;
+		testButton.addEventListener("click", (e) => {
+			if(!window.learn) {
+				window.learn = new Learn();
+			}
+			window.learn.test();
+		});
+		trainButton.addEventListener("click", (e) => {
+			if(!window.learn) {
+				window.learn = new Learn();
+			}
+			window.learn.train();
+		});
+
+		//Settings
+		let settingsButton = document.getElementById("settings");
+		let settingsPopup = document.getElementById("settings-container");
+		let settingsSaveButton = document.getElementById("save-settings");
+		let settingsResetButton = document.getElementById("reset-settings");
+		settingsButton.onclick = function(e) {
+			settingsPopup.classList.remove("is-hidden");
+		};
+		settingsSaveButton.onclick = function(e) {
+			saveSettings();
+			window.location.reload();
+		};
+		settingsResetButton.onclick = function(e) {
+			window.localStorage.removeItem("settings");
+			window.location.reload();
+		};
+		settingsPopup.onclick = function(e) {
+			if(e.target === settingsPopup) {
+				settingsPopup.classList.add("is-hidden");
+			}
+		};
+
+		let alphabetKatakanaRadio = document.getElementById("train-katakana");
+		let alphabetHiraganaRadio = document.getElementById("train-hiragana");
+		let trainMonoCheckbox = document.getElementById("train-monographs");
+		let trainDiacCheckbox = document.getElementById("train-diacritics");
+		let trainDigraphCheckbox = document.getElementById("train-digraphs");
+		let trainDigraphDiacCheckbox = document.getElementById("train-digraphs-diacritics");
+		let testMonoCheckbox = document.getElementById("test-monographs");
+		let testDiacCheckbox = document.getElementById("test-diacritics");
+		let testDigraphCheckbox = document.getElementById("test-digraphs");
+		let testDigraphDiacCheckbox = document.getElementById("test-digraphs-diacritics");
+		window.settings = getSettings();
+		applySettings();
+
+		function getSettings() {
+			let s = window.localStorage.settings;
+			if(s) {
+				s = JSON.parse(s);
+			} else {
+				s = {"train":{},"test":{}};
+			};
+			return {
+				"alphabet": typeof s.alphabet === "undefined" ? "hiragana" : s.alphabet,
+				"train": {
+					"monographs": typeof s.train.monographs === "undefined" ? true : s.train.monographs,
+					"diacritics": typeof s.train.diacritics === "undefined" ? false : s.train.diacritics,
+					"digraphs": typeof s.train.digraphs === "undefined" ? false : s.train.digraphs,
+					"digraphsDiacritics": typeof s.train.digraphsDiacritics === "undefined" ? false : s.train.digraphsDiacritics
+				},
+				"test": {
+					"monographs": typeof s.test.monographs === "undefined" ? true : s.test.monographs,
+					"diacritics": typeof s.test.diacritics === "undefined" ? false : s.test.diacritics,
+					"digraphs": typeof s.test.digraphs === "undefined" ? false : s.test.digraphs,
+					"digraphsDiacritics": typeof s.test.digraphsDiacritics === "undefined" ? false : s.test.digraphsDiacritics
+				}
+			};
+		}
+
+		function applySettings() {
+			alphabetKatakanaRadio.checked = window.settings.alphabet === "katakana";
+			alphabetHiraganaRadio.checked = window.settings.alphabet === "hiragana";
+
+			trainMonoCheckbox.checked = window.settings.train.monographs;
+			trainDiacCheckbox.checked = window.settings.train.diacritics;
+			trainDigraphCheckbox.checked = window.settings.train.digraphs;
+			trainDigraphDiacCheckbox.checked = window.settings.train.digraphsDiacritics;
+			testMonoCheckbox.checked = window.settings.test.monographs;
+			testDiacCheckbox.checked = window.settings.test.diacritics;
+			testDigraphCheckbox.checked = window.settings.test.digraphs;
+			testDigraphDiacCheckbox.checked = window.settings.test.digraphsDiacritics;
+		}
+
+		function saveSettings() {
+			window.settings = {
+				"alphabet": alphabetKatakanaRadio.checked ? "katakana" : "hiragana",
+				"train": {
+					"monographs": trainMonoCheckbox.checked,
+					"diacritics": trainDiacCheckbox.checked,
+					"digraphs": trainDigraphCheckbox.checked,
+					"digraphsDiacritics": trainDigraphDiacCheckbox.checked
+				},
+				"test": {
+					"monographs": testMonoCheckbox.checked,
+					"diacritics": testDiacCheckbox.checked,
+					"digraphs": testDigraphCheckbox.checked,
+					"digraphsDiacritics": testDigraphDiacCheckbox.checked
+				}
+			}
+			window.localStorage.setItem("settings", JSON.stringify(window.settings));
+		}
+	});
+</script>
+</html>
