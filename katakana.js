@@ -133,12 +133,6 @@ window.KATAKANA = {
 			"rom": "wa",
 			"jp": "ワ"
 		},{
-			"rom": "wi",
-			"jp": "ヰ"
-		},{
-			"rom": "we",
-			"jp": "ヱ"
-		},{
 			"rom": "wo",
 			"jp": "ヲ"
 		},{

@@ -133,12 +133,6 @@ window.HIRAGANA = {
 			"rom": "wa",
 			"jp": "わ"
 		},{
-			"rom": "wi",
-			"jp": "ゐ"
-		},{
-			"rom": "we",
-			"jp": "ゑ"
-		},{
 			"rom": "wo",
 			"jp": "を"
 		},{
